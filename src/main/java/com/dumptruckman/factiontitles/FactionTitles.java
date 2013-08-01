@@ -13,13 +13,8 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.scoreboard.DisplaySlot;
-import org.bukkit.scoreboard.Objective;
-import org.bukkit.scoreboard.Score;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.Team;
-
-import java.util.Set;
 
 public class FactionTitles extends JavaPlugin implements Listener {
 
@@ -31,24 +26,16 @@ public class FactionTitles extends JavaPlugin implements Listener {
             return;
         }
         getServer().getPluginManager().registerEvents(this, this);
-        getServer().getScheduler().scheduleSyncRepeatingTask(this, new Runnable() {
-            @Override
-            public void run() {
-                getServer().broadcastMessage("TEST PLUGIN IN USE!");
-            }
-        }, 600L, 600L);
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void playerJoin(PlayerJoinEvent event) {
         refreshScoreboards();
-        System.out.println("Faction title set on player join.");
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void playerQuit(PlayerQuitEvent event) {
         refreshScoreboards();
-        System.out.println("Faction title set on player join.");
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
@@ -61,7 +48,6 @@ public class FactionTitles extends JavaPlugin implements Listener {
             @Override
             public void run() {
                 refreshScoreboards();
-                System.out.println("Faction title set on faction change.");
             }
         }, 1L);
     }
@@ -79,19 +65,13 @@ public class FactionTitles extends JavaPlugin implements Listener {
                 team = scoreboard.registerNewTeam(factionName);
                 team.setDisplayName(factionName.substring(0, factionName.length() <= 16 ? factionName.length() : 16));
             }
-            team.setSuffix(" " + factionName.substring(0, factionName.length() <= 15 ? factionName.length() : 15));
-            team.addPlayer(p);
-
-            Objective obj = scoreboard.getObjective(factionName);
-            if (obj == null) {
-                obj = scoreboard.registerNewObjective("online in faction", "dummy");
+            team.setPrefix("");
+            if (faction.equals(FactionColls.get().getForWorld(p.getWorld().getName()).getNone())) {
+                team.setSuffix("");
+            } else {
+                team.setSuffix(" - " + ChatColor.GOLD + factionName.substring(0, factionName.length() <= 11 ? factionName.length() : 11));
             }
-            obj.setDisplaySlot(DisplaySlot.BELOW_NAME);
-            obj.setDisplayName("Online");
-
-            Score score = obj.getScore(p);
-            int size = faction.getUPlayersWhereOnline(true).size();
-            score.setScore(size);
+            team.addPlayer(p);
         }
     }
 }
