@@ -4,6 +4,7 @@ import com.massivecraft.factions.entity.Faction;
 import com.massivecraft.factions.entity.FactionColls;
 import com.massivecraft.factions.entity.UPlayer;
 import com.massivecraft.factions.event.FactionsEventMembershipChange;
+import com.massivecraft.factions.event.FactionsEventNameChange;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
@@ -40,10 +41,16 @@ public class FactionTitles extends JavaPlugin implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void playerJoinFaction(FactionsEventMembershipChange event) {
-        final Player player = Bukkit.getPlayerExact(event.getUPlayer().getName());
-        if (player == null) {
-            return;
-        }
+        Bukkit.getScheduler().runTaskLater(this, new Runnable() {
+            @Override
+            public void run() {
+                refreshScoreboards();
+            }
+        }, 1L);
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void playerJoinFaction(FactionsEventNameChange event) {
         Bukkit.getScheduler().runTaskLater(this, new Runnable() {
             @Override
             public void run() {
