@@ -13,13 +13,18 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.Team;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class FactionTitles extends JavaPlugin implements Listener {
+
+    private final Map<Player, Scoreboard> scoreboardMap = new HashMap<Player, Scoreboard>(Bukkit.getMaxPlayers());
 
     @Override
     public void onEnable() {
@@ -31,7 +36,7 @@ public class FactionTitles extends JavaPlugin implements Listener {
         getServer().getPluginManager().registerEvents(this, this);
     }
 
-    @EventHandler(priority = EventPriority.NORMAL)
+    @EventHandler(priority = EventPriority.LOW)
     public void playerJoin(PlayerJoinEvent event) {
         final Player player = event.getPlayer();
 
@@ -39,14 +44,20 @@ public class FactionTitles extends JavaPlugin implements Listener {
 
         Scoreboard scoreboard = getServer().getScoreboardManager().getNewScoreboard();
         player.setScoreboard(scoreboard);
+        scoreboardMap.put(player, scoreboard);
 
         // Set the faction names for all online players as their team suffix
 
         String factionName = UPlayer.get(player).getFaction().getName();
         for (Player p : Bukkit.getOnlinePlayers()) {
             getTeam(scoreboard, p).addPlayer(p);
-            getTeam(p.getScoreboard(), player.getWorld(), factionName).addPlayer(player);
+            getTeam(getScoreboard(p), player.getWorld(), factionName).addPlayer(player);
         }
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void playerQuit(PlayerQuitEvent event) {
+        scoreboardMap.remove(event.getPlayer());
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
@@ -61,11 +72,11 @@ public class FactionTitles extends JavaPlugin implements Listener {
         Bukkit.getScheduler().runTaskLater(this, new Runnable() {
             @Override
             public void run() {
-                Scoreboard scoreboard = player.getScoreboard();
+                Scoreboard scoreboard = getScoreboard(player);
                 String factionName = UPlayer.get(player).getFaction().getName();
                 for (Player p : Bukkit.getOnlinePlayers()) {
                     getTeam(scoreboard, p).addPlayer(p);
-                    getTeam(p.getScoreboard(), player.getWorld(), factionName).addPlayer(player);
+                    getTeam(getScoreboard(p), player.getWorld(), factionName).addPlayer(player);
                 }
             }
         }, 1L);
@@ -80,7 +91,7 @@ public class FactionTitles extends JavaPlugin implements Listener {
         // Update all players on the server with the new team name
 
         for (Player p : Bukkit.getOnlinePlayers()) {
-            Scoreboard scoreboard = p.getScoreboard();
+            Scoreboard scoreboard = getScoreboard(p);
             for (Player fPlayer : fPlayers) {
                 getTeam(scoreboard, fPlayer.getWorld(), newName).addPlayer(fPlayer);
             }
@@ -110,5 +121,9 @@ public class FactionTitles extends JavaPlugin implements Listener {
             team.setSuffix(" - " + ChatColor.GOLD + factionName.substring(0, factionName.length() <= 11 ? factionName.length() : 11));
         }
         return team;
+    }
+
+    public Scoreboard getScoreboard(Player player) {
+        return scoreboardMap.get(player);
     }
 }
